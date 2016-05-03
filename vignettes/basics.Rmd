@@ -1,0 +1,145 @@
+---
+title: "fixedpoints: Basics"
+author: "Simon Barthelmé"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r init,echo=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, cache=FALSE, 
+               comment=NA, verbose=TRUE, fig.width=4, fig.height=4,dev='png')
+```
+
+# Thinning a set of points
+
+A set of points randomly drawn from a uniform distribution will typically clump a bit:
+
+```{r}
+library(spatstat)
+pp <- rpoint(200) #200 random points
+plot(pp)
+```
+
+Some of these points are really close together. For some applications it's preferable to have points that are at least a certain distance apart. We can get there by thinning the point set, removing iteratively points that are too close to their nearest neighbour:
+
+```{r}
+
+rm.point <- function(pp,eps=.05)
+    {
+        d <- nndist(pp) #Find distance to nearest neighbour
+        if (any(d < eps)) #Any of them too close? 
+            {
+                chuck <- which.min(d) #Find the worst offender
+                pp[-chuck] #Get rid of it
+            }
+        else
+            {
+                pp
+            }
+    }
+```
+
+Turning our iteration into a fixed point iteration we get a thinning algorithm:
+
+```{r}
+thin <- fp(rm.point)
+plot(thin(pp))
+plot(thin(pp,eps=.03))
+```
+
+# Optimisation by gradient descent
+
+In gradient descent the minimum of a function $f(x)$ is found by iterating:
+
+$$ x_{t+1} = x_t - \alpha \nabla f(x_t) $$
+
+Here is an implementation using fp: 
+
+```{r}
+
+cost.fun <- function(x) .5*sum(x^2)
+grad.cost <- function(x) x
+
+gd.iter <- function(x,alpha=.2) x-alpha*grad.cost(x)
+gd <- fp(gd.iter)+viewer(function(x) sprintf("Cost: %.3e",cost.fun(x)) %>% print,10,TRUE)
+x0 <- rnorm(10)
+gd(x0)
+
+```
+
+We can choose to stop the iteration once the cost is low enough:
+
+```{r}
+gd <- fp(gd.iter)+convergence(function(x,xp) cost.fun(xp),tol=1)
+
+gd(x0)
+#Change max. cost
+gd <- gd+convergence(tol=.1)
+gd(x0)
+```
+
+Or we could choose to stop the iteration once the cost has stopped decreasing:
+
+```{r}
+gd <- fp(gd.iter)+convergence(function(x,xp) abs(cost.fun(xp)-cost.fun(x)),tol=.01)
+gd(x0)
+
+```
+# Region labelling
+
+Region labelling is a  common task in image segmentation. The input is a black and white image (ie. the pixels have value 0/1), and the goal is to "label" each continuous white region, i.e. change the pixel value in this region from 1 to $i$, where i is the region's index.
+
+It turns out to be very easy to implement region labelling as a fixed point iteration. Our iteration is to find the first pixel with value 1 in the image, and use a "bucket fill" to change the value of the surrounding white region. We iterate until there are no more such pixels.
+
+Here is the iteration:
+
+```{r}
+library(imager)
+region.label <- function(im)
+    {
+        #Get coordinates to all the pixels with value 1
+        whitePix <- as.data.frame(im) %>% subset(value == 1)
+        if (nrow(whitePix) > 0)
+            {
+                coord <- whitePix[1,c("x","y")] #first pixel we find 
+                bucketfill(im,coord$x,coord$y,color=max(im)+1)
+            }
+        else
+            {
+                im
+            }
+    }
+
+```
+
+And here's the full iteration on an example:
+
+```{r }
+set.seed(1)
+blobs <- imnoise(500,500) %>% isoblur(25) %>% threshold(0)
+plot(blobs)
+g <- fp(region.label)
+plot(g(blobs))
+
+```
+
+The algorithm is easy to understand if we visualise the process:
+
+```{r fig.width=10, fig.height=6}
+
+show.iter <- function(im,iter)
+    {
+        regs <- as.data.frame(im) %>% dplyr::filter(value > 1)
+        centers <- dplyr::group_by(regs,value) %>% dplyr::summarise(mx=mean(x),my=mean(y),label=unique(value)-1)
+        plot(im,main=paste("Iter",iter))
+        with(centers,text(mx,my,label,col="red"))
+    }
+
+layout(matrix(1:6,2,3,byrow=TRUE))
+g <- fp(region.label)+viewer(show.iter,every=1)
+g(blobs)
+```

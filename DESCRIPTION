@@ -1,0 +1,27 @@
+Package: fixedpoints
+Type: Package
+Title: Iterate mappings and find fixed points
+Version: 0.1
+Date: 2016-05-02
+Author: Simon Barthelmé <simon.barthelme@gipsa-lab.fr>
+Maintainer: Simon Barthelmé <simon.barthelme@gipsa-lab.fr>
+Description: A set of utilities for iterating functions and finding fixed
+    points. Useful for optimisation, ODEs, PDEs, etc.
+License: LGPL
+Suggests:
+    knitr,
+    rmarkdown,
+    imager,
+    spatstat
+Imports:
+    magrittr,
+    purrr,
+    methods
+Recommends:
+    imager,
+    ggplot2,
+    dplyr
+Depends:
+    magrittr
+VignetteBuilder: knitr
+RoxygenNote: 5.0.1
