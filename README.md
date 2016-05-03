@@ -1,4 +1,4 @@
-# fixedpoints: an R package for doing the same thing 
+## fixedpoints: an R package for doing the same thing repeatedly
 
 This package provides tools for doing things repeatedly (a fixed number of times, or until convergence). It does absolutely nothing you couldn't do with a while loop, but it makes for clean and concise code in a functional-programming style.
 
