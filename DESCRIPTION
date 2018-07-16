@@ -3,8 +3,8 @@ Type: Package
 Title: Iterate mappings and find fixed points
 Version: 0.1
 Date: 2016-05-02
-Author: Simon Barthelmé <simon.barthelme@gipsa-lab.fr>
-Maintainer: Simon Barthelmé <simon.barthelme@gipsa-lab.fr>
+Author: Simon Barthelme <simon.barthelme@gipsa-lab.fr>
+Maintainer: Simon Barthelme <simon.barthelme@gipsa-lab.fr>
 Description: A set of utilities for iterating functions and finding fixed
     points. Useful for optimisation, ODEs, PDEs, etc.
 License: LGPL
